@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { LoginPage } from './pages/LoginPage'
+import { RegisterPage } from './pages/RegisterPage'
 import { StudentDashboard } from './pages/StudentDashboard'
 import { ScanQRPage } from './pages/ScanQRPage'
 import { OrganiserDashboard } from './pages/OrganiserDashboard'
@@ -18,6 +19,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route
         path="/"
         element={
