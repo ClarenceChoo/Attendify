@@ -11,7 +11,7 @@ export const apiClient = {
     return res.json()
   },
 
-  async register(payload: { name: string; email: string; password: string }) {
+  async register(payload: { name: string; email: string; password: string; role: string }) {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

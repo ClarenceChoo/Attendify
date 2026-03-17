@@ -7,6 +7,7 @@ export const RegisterPage: React.FC = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [role, setRole] = useState<'student' | 'organiser'>('student')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -44,7 +45,7 @@ export const RegisterPage: React.FC = () => {
     setLoading(true)
 
     try {
-      await apiClient.register({ name, email, password })
+      await apiClient.register({ name, email, password, role })
       setSuccess('Registration successful. Please log in.')
       // navigate to login after short delay
       setTimeout(() => navigate('/login'), 1200)
@@ -89,6 +90,25 @@ export const RegisterPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-slate-700">Account Type</label>
+                <div className="flex w-full items-center overflow-hidden rounded-xl border border-slate-300 p-1 bg-slate-50">
+                  <button
+                    type="button"
+                    onClick={() => setRole('student')}
+                    className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${role === 'student' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Student
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('organiser')}
+                    className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${role === 'organiser' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    Developer
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="mb-2 block text-sm font-semibold text-slate-700">Full name</label>
                 <input
