@@ -10,7 +10,8 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 3001
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key'
-const TOKEN_REFRESH_INTERVAL = 30000 // 30 seconds
+const TOKEN_REFRESH_INTERVAL = 10000 // 10 seconds
+const APP_URL = process.env.APP_URL || 'http://localhost:5173'
 
 // Middleware
 app.use(cors())
@@ -78,7 +79,9 @@ app.post('/api/auth/login', (req, res) => {
 
 // Verify token middleware
 const verifyToken = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1]
+  const headerToken = req.headers.authorization?.split(' ')[1]
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : null
+  const token = headerToken || queryToken
 
   if (!token) {
     return res.status(401).json({ error: 'No token provided' })
@@ -97,7 +100,7 @@ const verifyToken = (req, res, next) => {
 // ROTATING TOKEN SERVICE
 // =============================================================================
 
-// Generate signed rotating QR token valid for 30 seconds
+// Generate signed rotating QR token valid for 10 seconds
 const generateRotatingToken = (eventId) => {
   const timestamp = Math.floor(Date.now() / 1000)
   const payload = {
@@ -128,9 +131,9 @@ const verifyRotatingToken = (token, eventId) => {
       return { valid: false, error: 'Invalid signature' }
     }
 
-    // Check token age (must be within 30s)
+    // Check token age (must be within 10s)
     const tokenAge = Math.floor(Date.now() / 1000) - payload.timestamp
-    if (tokenAge > 30) {
+    if (tokenAge > 10) {
       return { valid: false, error: 'Token expired' }
     }
 
@@ -144,7 +147,7 @@ const verifyRotatingToken = (token, eventId) => {
   }
 }
 
-// Stream rotating tokens every 30s
+// Stream rotating tokens every 10s
 app.get('/api/events/:eventId/qr-stream', verifyToken, (req, res) => {
   const { eventId } = req.params
   const event = events.get(eventId)
@@ -164,14 +167,16 @@ app.get('/api/events/:eventId/qr-stream', verifyToken, (req, res) => {
 
   const sendQR = async () => {
     const token = generateRotatingToken(eventId)
+    const scanUrl = `${APP_URL}/scan?eventId=${encodeURIComponent(eventId)}&token=${encodeURIComponent(token)}`
     const qrData = {
       token,
+      scanUrl,
       refreshAt: Date.now() + TOKEN_REFRESH_INTERVAL,
       expiresAt: Date.now() + TOKEN_REFRESH_INTERVAL + 5000,
     }
 
     try {
-      const qrCode = await QRCode.toDataURL(token)
+      const qrCode = await QRCode.toDataURL(scanUrl)
       res.write(`data: ${JSON.stringify({ ...qrData, qrCode })}\n\n`)
     } catch (err) {
       res.write(`data: ${JSON.stringify(qrData)}\n\n`)
