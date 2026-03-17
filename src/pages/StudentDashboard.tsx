@@ -49,15 +49,17 @@ export const StudentDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-purple-600">Attendify</h1>
+    <div className="min-h-screen bg-slate-50">
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-violet-700">Attendify</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.email}</span>
+            <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 sm:inline-flex">
+              {user?.email}
+            </span>
             <button
               onClick={handleLogout}
-              className="text-sm text-red-600 hover:text-red-700 font-semibold"
+              className="text-sm font-semibold text-rose-600 hover:text-rose-700"
             >
               Logout
             </button>
@@ -65,47 +67,55 @@ export const StudentDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Events Attended</p>
-            <p className="text-3xl font-bold text-purple-600">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white shadow-lg">
+          <p className="text-sm text-violet-100">Student Dashboard</p>
+          <h2 className="mt-1 text-2xl font-bold">Welcome back, {user?.name}</h2>
+          <p className="mt-1 text-sm text-violet-100">
+            Track your participation and check in to ongoing events.
+          </p>
+        </div>
+
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
+            <p className="text-sm text-slate-500">Events Attended</p>
+            <p className="text-3xl font-bold text-violet-700">
               {myAttendances?.stats?.totalAttended || 0}
             </p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Engagement Score</p>
+          <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+            <p className="text-sm text-slate-500">Engagement Score</p>
             <p className="text-3xl font-bold text-blue-600">
               {Math.min(100, (myAttendances?.stats?.totalAttended || 0) * 20)}
             </p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Badges Earned</p>
-            <p className="text-3xl font-bold text-green-600">
+          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+            <p className="text-sm text-slate-500">Badges Earned</p>
+            <p className="text-3xl font-bold text-emerald-600">
               {myAttendances?.stats?.badges?.length || 0}
             </p>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="border-b border-gray-200 p-4">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 p-4">
             <div className="flex gap-4">
               <button
                 onClick={() => setActiveTab('events')}
-                className={`px-4 py-2 font-semibold ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                   activeTab === 'events'
-                    ? 'text-purple-600 border-b-2 border-purple-600'
-                    : 'text-gray-600'
+                    ? 'bg-violet-100 text-violet-700'
+                    : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 Upcoming Events
               </button>
               <button
                 onClick={() => setActiveTab('history')}
-                className={`px-4 py-2 font-semibold ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                   activeTab === 'history'
-                    ? 'text-purple-600 border-b-2 border-purple-600'
-                    : 'text-gray-600'
+                    ? 'bg-violet-100 text-violet-700'
+                    : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
                 Attendance History
@@ -117,23 +127,23 @@ export const StudentDashboard: React.FC = () => {
             {activeTab === 'events' && (
               <div className="space-y-4">
                 {events.length === 0 ? (
-                  <p className="text-gray-500">No upcoming events</p>
+                  <p className="text-slate-500">No upcoming events</p>
                 ) : (
                   events.map((event) => (
                     <div
                       key={event.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer"
+                      className="cursor-pointer rounded-xl border border-slate-200 p-4 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
                       onClick={() => navigate(`/events/${event.id}`)}
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-semibold text-gray-800">
+                          <h3 className="font-semibold text-slate-800">
                             {event.title}
                           </h3>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-slate-600">
                             {event.venue} • {event.category}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-slate-500">
                             {new Date(event.startTime).toLocaleString()}
                           </p>
                         </div>
@@ -159,20 +169,20 @@ export const StudentDashboard: React.FC = () => {
               <div>
                 {myAttendances?.stats?.badges && myAttendances.stats.badges.length > 0 && (
                   <div className="mb-6">
-                    <h4 className="font-semibold text-gray-800 mb-3">
+                    <h4 className="mb-3 font-semibold text-slate-800">
                       Your Badges
                     </h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {myAttendances.stats.badges.map((badge: any) => (
                         <div
                           key={badge.name}
-                          className="bg-gradient-to-br from-yellow-100 to-yellow-50 border border-yellow-200 rounded-lg p-4 text-center"
+                          className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-100 p-4 text-center"
                         >
                           <p className="text-3xl mb-1">{badge.icon}</p>
-                          <p className="font-semibold text-sm text-gray-800">
+                          <p className="text-sm font-semibold text-slate-800">
                             {badge.name}
                           </p>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-slate-600">
                             {badge.description}
                           </p>
                         </div>
@@ -182,11 +192,11 @@ export const StudentDashboard: React.FC = () => {
                 )}
 
                 <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">
+                  <h4 className="mb-3 font-semibold text-slate-800">
                     Attendance History
                   </h4>
                   {myAttendances?.attendances?.length === 0 ? (
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-sm text-slate-500">
                       No attendance records yet
                     </p>
                   ) : (
@@ -194,13 +204,13 @@ export const StudentDashboard: React.FC = () => {
                       {myAttendances?.attendances?.map((att: any) => (
                         <div
                           key={att.id}
-                          className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                          className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-3"
                         >
                           <div>
-                            <p className="font-semibold text-sm">
+                            <p className="text-sm font-semibold">
                               {att.eventTitle}
                             </p>
-                            <p className="text-xs text-gray-600">
+                            <p className="text-xs text-slate-600">
                               {new Date(att.timestamp).toLocaleString()}
                             </p>
                           </div>

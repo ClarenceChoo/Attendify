@@ -80,15 +80,17 @@ export const OrganiserDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-purple-600">Attendify Organiser</h1>
+    <div className="min-h-screen bg-slate-50">
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-violet-700">Attendify Organiser</h1>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.email}</span>
+            <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 sm:inline-flex">
+              {user?.email}
+            </span>
             <button
               onClick={handleLogout}
-              className="text-sm text-red-600 hover:text-red-700 font-semibold"
+              className="text-sm font-semibold text-rose-600 hover:text-rose-700"
             >
               Logout
             </button>
@@ -96,25 +98,33 @@ export const OrganiserDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white shadow-lg">
+          <p className="text-sm text-violet-100">Operations Dashboard</p>
+          <h2 className="mt-1 text-2xl font-bold">Run events in real-time</h2>
+          <p className="mt-1 text-sm text-violet-100">
+            Create events, monitor attendance live, and export results instantly.
+          </p>
+        </div>
+
         <div className="mb-8">
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition"
+            className="rounded-xl bg-violet-600 px-6 py-2.5 font-semibold text-white shadow-sm transition hover:bg-violet-700"
           >
             + Create Event
           </button>
         </div>
 
         {showCreateForm && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">
+          <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-xl font-bold text-slate-800">
               Create New Event
             </h2>
             <form onSubmit={handleCreateEvent} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Event Title
                   </label>
                   <input
@@ -123,13 +133,13 @@ export const OrganiserDashboard: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, title: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Category
                   </label>
                   <select
@@ -137,7 +147,7 @@ export const OrganiserDashboard: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, category: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
                   >
                     <option value="welfare">Welfare</option>
                     <option value="workshop">Workshop</option>
@@ -149,7 +159,7 @@ export const OrganiserDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Venue
                   </label>
                   <input
@@ -158,13 +168,13 @@ export const OrganiserDashboard: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, venue: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Expected Attendees
                   </label>
                   <input
@@ -176,12 +186,12 @@ export const OrganiserDashboard: React.FC = () => {
                         expectedAttendees: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Start Time
                   </label>
                   <input
@@ -190,13 +200,13 @@ export const OrganiserDashboard: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, startTime: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="mb-2 block text-sm font-semibold text-slate-700">
                     End Time
                   </label>
                   <input
@@ -205,7 +215,7 @@ export const OrganiserDashboard: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, endTime: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
                     required
                   />
                 </div>
@@ -214,14 +224,14 @@ export const OrganiserDashboard: React.FC = () => {
               <div className="flex gap-4">
                 <button
                   type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition"
+                  className="rounded-xl bg-emerald-600 px-6 py-2.5 font-semibold text-white transition hover:bg-emerald-700"
                 >
                   Create Event
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowCreateForm(false)}
-                  className="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg transition"
+                  className="rounded-xl bg-slate-200 px-6 py-2.5 font-semibold text-slate-700 transition hover:bg-slate-300"
                 >
                   Cancel
                 </button>
@@ -231,22 +241,22 @@ export const OrganiserDashboard: React.FC = () => {
         )}
 
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-gray-800">Your Events</h2>
+          <h2 className="text-xl font-bold text-slate-800">Your Events</h2>
 
           {events.length === 0 ? (
-            <p className="text-gray-500">No events created yet</p>
+            <p className="text-slate-500">No events created yet</p>
           ) : (
             events.map((event) => (
-              <div key={event.id} className="bg-white rounded-lg shadow p-6">
+              <div key={event.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-gray-800">
+                    <h3 className="text-xl font-bold text-slate-800">
                       {event.title}
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-slate-600">
                       {event.venue} • {event.category}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-slate-500">
                       {new Date(event.startTime).toLocaleString()}
                     </p>
                   </div>
@@ -263,22 +273,22 @@ export const OrganiserDashboard: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 mb-4 p-4 bg-gray-50 rounded">
+                <div className="mb-4 grid grid-cols-3 gap-4 rounded-xl bg-slate-50 p-4">
                   <div>
-                    <p className="text-gray-600 text-sm">Attendance</p>
-                    <p className="text-2xl font-bold text-purple-600">
+                    <p className="text-sm text-slate-600">Attendance</p>
+                    <p className="text-2xl font-bold text-violet-700">
                       {event.attendanceCount}/{event.expectedAttendees}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600 text-sm">Rate</p>
+                    <p className="text-sm text-slate-600">Rate</p>
                     <p className="text-2xl font-bold text-blue-600">
                       {event.attendanceRate}
                     </p>
                   </div>
                   <div>
-                    <p className="text-gray-600 text-sm">Created</p>
-                    <p className="text-sm text-gray-700">
+                    <p className="text-sm text-slate-600">Created</p>
+                    <p className="text-sm text-slate-700">
                       {new Date(event.createdAt).toLocaleDateString()}
                     </p>
                   </div>
@@ -287,7 +297,7 @@ export const OrganiserDashboard: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={() => navigate(`/organiser/events/${event.id}`)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+                    className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700"
                   >
                     Manage Event
                   </button>
@@ -295,7 +305,7 @@ export const OrganiserDashboard: React.FC = () => {
                     onClick={() =>
                       apiClient.exportCSV(token!, event.id).catch(console.error)
                     }
-                    className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition text-sm"
+                    className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
                   >
                     Export CSV
                   </button>

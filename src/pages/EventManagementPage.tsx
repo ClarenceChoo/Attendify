@@ -80,29 +80,29 @@ export const EventManagementPage: React.FC = () => {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+    <div className="min-h-screen bg-slate-50">
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate('/organiser')}
-            className="text-gray-600 hover:text-gray-800 text-sm font-semibold"
+            className="text-sm font-semibold text-slate-600 hover:text-slate-800"
           >
             ← Back
           </button>
-          <h1 className="text-2xl font-bold text-purple-600">Event Manager</h1>
+          <h1 className="text-2xl font-bold text-violet-700">Event Manager</h1>
           <div></div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">{event.title}</h1>
-              <p className="text-gray-600 mt-1">
+              <h1 className="text-3xl font-bold text-slate-800">{event.title}</h1>
+              <p className="mt-1 text-slate-600">
                 {event.venue} • {event.category}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 {new Date(event.startTime).toLocaleString()}
               </p>
             </div>
@@ -110,7 +110,7 @@ export const EventManagementPage: React.FC = () => {
               {event.status === 'draft' && (
                 <button
                   onClick={handleStartEvent}
-                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                  className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700"
                 >
                   Start Check-In
                 </button>
@@ -118,7 +118,7 @@ export const EventManagementPage: React.FC = () => {
               {event.status === 'ongoing' && (
                 <button
                   onClick={handleEndEvent}
-                  className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition"
+                  className="rounded-xl bg-rose-600 px-4 py-2 font-semibold text-white transition hover:bg-rose-700"
                 >
                   End Event
                 </button>
@@ -128,29 +128,29 @@ export const EventManagementPage: React.FC = () => {
 
           {/* Live Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded p-4">
-              <p className="text-gray-600 text-sm font-semibold">Total Scans</p>
-              <p className="text-3xl font-bold text-purple-600">
+            <div className="rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 to-violet-100 p-4">
+              <p className="text-sm font-semibold text-slate-600">Total Scans</p>
+              <p className="text-3xl font-bold text-violet-700">
                 {attendances?.summary?.totalScanned}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded p-4">
-              <p className="text-gray-600 text-sm font-semibold">
+            <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+              <p className="text-sm font-semibold text-slate-600">
                 Attendance Rate
               </p>
               <p className="text-3xl font-bold text-blue-600">{currentRate}%</p>
             </div>
 
-            <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded p-4">
-              <p className="text-gray-600 text-sm font-semibold">Late Arrivals</p>
+            <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-yellow-50 to-yellow-100 p-4">
+              <p className="text-sm font-semibold text-slate-600">Late Arrivals</p>
               <p className="text-3xl font-bold text-yellow-600">
                 {attendances?.summary?.byStatus?.late || 0}
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded p-4">
-              <p className="text-gray-600 text-sm font-semibold">
+            <div className="rounded-xl border border-rose-100 bg-gradient-to-br from-red-50 to-red-100 p-4">
+              <p className="text-sm font-semibold text-slate-600">
                 Suspicious Activity
               </p>
               <p className="text-3xl font-bold text-red-600">
@@ -163,7 +163,7 @@ export const EventManagementPage: React.FC = () => {
         {/* Suspicious Activity Alert */}
         {attendances?.summary?.suspiciousActivity &&
           attendances.summary.suspiciousActivity.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+            <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-6">
               <h3 className="font-bold text-red-800 mb-3">
                 🚨 Suspicious Activity Detected
               </h3>
@@ -179,44 +179,44 @@ export const EventManagementPage: React.FC = () => {
           )}
 
         {/* Attendance Table */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-bold text-slate-800">
             Attendee List
           </h2>
 
           {attendances?.attendances?.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">
+            <p className="py-8 text-center text-slate-500">
               No check-ins yet. Event status: <strong>{event.status}</strong>
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="border-b-2 border-gray-200">
+                <thead className="border-b-2 border-slate-200">
                   <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
                       Email
                     </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
                       Time
                     </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
                       Status
                     </th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">
                       Phase
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {attendances?.attendances?.map((att: any) => (
-                    <tr key={att.id} className="border-b border-gray-100">
-                      <td className="py-3 px-4 text-gray-800 font-semibold">
+                    <tr key={att.id} className="border-b border-slate-100">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
                         {att.userEmail}
                       </td>
-                      <td className="py-3 px-4 text-gray-600">
+                      <td className="px-4 py-3 text-slate-600">
                         {new Date(att.timestamp).toLocaleTimeString()}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-3">
                         <span
                           className={`inline-block px-2 py-1 text-xs font-semibold rounded ${
                             att.status === 'late'
@@ -227,7 +227,7 @@ export const EventManagementPage: React.FC = () => {
                           {att.status || 'Attended'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{att.phase}</td>
+                      <td className="px-4 py-3 text-slate-600">{att.phase}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -241,7 +241,7 @@ export const EventManagementPage: React.FC = () => {
                 onClick={() =>
                   apiClient.exportCSV(token!, eventId!).catch(console.error)
                 }
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-6 rounded-lg transition"
+                className="rounded-xl bg-emerald-600 px-6 py-2.5 font-semibold text-white transition hover:bg-emerald-700"
               >
                 📊 Export CSV
               </button>

@@ -74,11 +74,11 @@ export const ScanQRPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-violet-700 via-indigo-700 to-blue-700 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl rounded-3xl border border-white/30 bg-white p-8 shadow-2xl">
         <button
           onClick={() => navigate('/events')}
-          className="text-gray-600 hover:text-gray-800 mb-4 text-sm"
+          className="mb-4 text-sm font-semibold text-slate-500 hover:text-slate-700"
         >
           ← Back
         </button>
@@ -86,44 +86,44 @@ export const ScanQRPage: React.FC = () => {
         {success ? (
           <div className="text-center">
             <div className="text-6xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold text-green-600 mb-2">
+            <h2 className="mb-2 text-2xl font-bold text-emerald-600">
               Check-in Successful!
             </h2>
-            <p className="text-gray-600">Your attendance has been recorded.</p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-slate-600">Your attendance has been recorded.</p>
+            <p className="mt-2 text-sm text-slate-500">
               Redirecting to dashboard...
             </p>
           </div>
         ) : (
           <div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            <h1 className="mb-2 text-3xl font-bold text-slate-800">
               {event.title}
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="mb-6 text-slate-600">
               {event.venue} • {new Date(event.startTime).toLocaleString()}
             </p>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+              <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
                 {error}
               </div>
             )}
 
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-8 text-center mb-6">
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-slate-100 p-8 text-center">
               {qrData?.qrCode ? (
                 <img
                   src={qrData.qrCode}
                   alt="QR Code"
-                  className="w-64 h-64 mx-auto mb-4"
+                  className="mx-auto mb-4 h-64 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
                 />
               ) : (
-                <div className="w-64 h-64 mx-auto bg-gray-200 rounded flex items-center justify-center">
-                  <p className="text-gray-500">Loading QR...</p>
+                <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-xl bg-slate-200">
+                  <p className="text-slate-500">Loading QR...</p>
                 </div>
               )}
 
               {qrData?.refreshAt && (
-                <p className="text-xs text-gray-600">
+                <p className="text-xs font-medium text-slate-600">
                   QR refreshes in:{' '}
                   {Math.max(
                     0,
@@ -136,12 +136,12 @@ export const ScanQRPage: React.FC = () => {
             <button
               onClick={handleScan}
               disabled={!qrData || scanning}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition disabled:opacity-50 mb-4"
+              className="mb-4 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
             >
               {scanning ? 'Processing...' : '✓ Confirm Check-In'}
             </button>
 
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-slate-600">
               Click the button above to confirm your attendance. This QR code is
               only valid for 30 seconds and refreshes automatically.
             </p>

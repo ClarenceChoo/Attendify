@@ -27,18 +27,47 @@ export const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Attendify</h1>
-          <p className="text-gray-600">
-            Smart Campus Engagement & Accountability Platform
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-violet-700 via-indigo-700 to-blue-700 p-4 md:p-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] w-full max-w-6xl grid-cols-1 overflow-hidden rounded-3xl border border-white/30 bg-white/10 shadow-2xl backdrop-blur md:grid-cols-2">
+        <div className="hidden flex-col justify-between p-10 text-white md:flex">
+          <div>
+            <p className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
+              HACKATHON READY
+            </p>
+            <h1 className="mt-6 text-5xl font-bold leading-tight">
+              Attendify
+            </h1>
+            <p className="mt-4 max-w-md text-white/85">
+              Secure participation tracking, live event operations, and engagement
+              analytics for residential college life.
+            </p>
+          </div>
+          <div className="space-y-3 text-sm text-white/90">
+            <p>• Rotating signed QR tokens every 30 seconds</p>
+            <p>• One-scan-per-user anti-proxy protection</p>
+            <p>• Real-time organiser insights and exports</p>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center justify-center bg-white p-8 md:p-10">
+          <div className="w-full max-w-md">
+            <div className="mb-8 md:hidden">
+              <h1 className="text-3xl font-bold text-slate-900">Attendify</h1>
+              <p className="mt-2 text-sm text-slate-600">
+                Smart Campus Engagement Platform
+              </p>
+            </div>
+
+            <div className="mb-7">
+              <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                Sign in with your NUS account to continue.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="mb-2 block text-sm font-semibold text-slate-700">
               NUS Email
             </label>
             <input
@@ -46,16 +75,16 @@ export const LoginPage: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.name@u.nus.edu"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-slate-900 shadow-sm outline-none transition focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="mt-1 text-xs text-slate-500">
               Must use a valid NUS email (@u.nus.edu)
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
               {error}
             </div>
           )}
@@ -63,22 +92,24 @@ export const LoginPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 font-semibold text-white shadow-md transition hover:from-violet-700 hover:to-indigo-700 disabled:opacity-50"
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
-        </form>
+            </form>
 
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg text-sm text-gray-700">
-          <p className="font-semibold mb-2">Demo Accounts:</p>
-          <ul className="space-y-1 text-xs">
+            <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <p className="mb-2 font-semibold">Demo Accounts:</p>
+              <ul className="space-y-1 text-xs">
             <li>
               <strong>Student:</strong> student1@u.nus.edu
             </li>
             <li>
               <strong>Organiser:</strong> org1@u.nus.edu
             </li>
-          </ul>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
