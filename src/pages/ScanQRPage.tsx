@@ -14,6 +14,11 @@ export const ScanQRPage: React.FC = () => {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(true)
 
+  const secondsLeft = qrData?.refreshAt
+    ? Math.max(0, Math.floor((qrData.refreshAt - Date.now()) / 1000))
+    : 0
+  const refreshProgress = qrData?.refreshAt ? Math.min(100, (secondsLeft / 30) * 100) : 0
+
   useEffect(() => {
     if (!token || !eventId) return
 
@@ -59,8 +64,11 @@ export const ScanQRPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading event...</p>
+      <div className="app-shell flex items-center justify-center">
+        <div className="surface-card w-full max-w-md p-8 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-stone-300 border-t-black" />
+          <p className="text-sm text-slate-600">Loading check-in session...</p>
+        </div>
       </div>
     )
   }
@@ -74,7 +82,7 @@ export const ScanQRPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-700 via-indigo-700 to-blue-700 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-black via-stone-900 to-stone-800 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl rounded-3xl border border-white/30 bg-white p-8 shadow-2xl">
         <button
           onClick={() => navigate('/events')}
@@ -86,7 +94,7 @@ export const ScanQRPage: React.FC = () => {
         {success ? (
           <div className="text-center">
             <div className="text-6xl mb-4">✅</div>
-            <h2 className="mb-2 text-2xl font-bold text-emerald-600">
+            <h2 className="mb-2 text-2xl font-bold text-neutral-900">
               Check-in Successful!
             </h2>
             <p className="text-slate-600">Your attendance has been recorded.</p>
@@ -123,20 +131,25 @@ export const ScanQRPage: React.FC = () => {
               )}
 
               {qrData?.refreshAt && (
-                <p className="text-xs font-medium text-slate-600">
-                  QR refreshes in:{' '}
-                  {Math.max(
-                    0,
-                    Math.floor((qrData.refreshAt - Date.now()) / 1000)
-                  )}s
-                </p>
+                <div className="mx-auto mt-3 max-w-xs">
+                  <div className="mb-1 flex items-center justify-between text-xs font-medium text-slate-600">
+                    <span>QR refresh timer</span>
+                    <span>{secondsLeft}s</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-neutral-900 transition-all"
+                      style={{ width: `${refreshProgress}%` }}
+                    />
+                  </div>
+                </div>
               )}
             </div>
 
             <button
               onClick={handleScan}
               disabled={!qrData || scanning}
-              className="mb-4 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+              className="btn-success mb-4 w-full py-3"
             >
               {scanning ? 'Processing...' : '✓ Confirm Check-In'}
             </button>

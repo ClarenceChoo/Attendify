@@ -61,8 +61,11 @@ export const EventManagementPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+      <div className="app-shell flex items-center justify-center">
+        <div className="surface-card w-full max-w-md p-8 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-stone-300 border-t-black" />
+          <p className="text-sm text-slate-600">Loading event operations...</p>
+        </div>
       </div>
     )
   }
@@ -80,37 +83,48 @@ export const EventManagementPage: React.FC = () => {
   )
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+    <div className="app-shell">
+      <nav className="app-nav">
+        <div className="app-container !py-4 flex items-center justify-between">
           <button
             onClick={() => navigate('/organiser')}
             className="text-sm font-semibold text-slate-600 hover:text-slate-800"
           >
             ← Back
           </button>
-          <h1 className="text-2xl font-bold text-violet-700">Event Manager</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Event Manager</h1>
           <div></div>
         </div>
       </nav>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
+      <div className="app-container">
+        <div className="mb-8 rounded-2xl border border-stone-700 bg-gradient-to-r from-black to-stone-800 p-6 text-stone-100 shadow-lg">
+          <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-slate-800">{event.title}</h1>
-              <p className="mt-1 text-slate-600">
-                {event.venue} • {event.category}
-              </p>
-              <p className="text-sm text-slate-500">
-                {new Date(event.startTime).toLocaleString()}
-              </p>
+              <p className="text-sm text-stone-300">Live Event Mode</p>
+              <h1 className="text-3xl font-bold">{event.title}</h1>
             </div>
+            <span
+              className={`status-pill bg-white/20 text-white ${
+                event.status === 'ongoing' ? 'animate-pulse' : ''
+              }`}
+            >
+              {event.status}
+            </span>
+          </div>
+          <p className="text-sm text-stone-300">
+            {event.venue} • {event.category} • {new Date(event.startTime).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="surface-card mb-8 p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-xl font-bold text-slate-800">Operations Controls</h2>
             <div className="flex gap-2">
               {event.status === 'draft' && (
                 <button
                   onClick={handleStartEvent}
-                  className="rounded-xl bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700"
+                  className="btn-success"
                 >
                   Start Check-In
                 </button>
@@ -118,7 +132,7 @@ export const EventManagementPage: React.FC = () => {
               {event.status === 'ongoing' && (
                 <button
                   onClick={handleEndEvent}
-                  className="rounded-xl bg-rose-600 px-4 py-2 font-semibold text-white transition hover:bg-rose-700"
+                  className="btn-danger"
                 >
                   End Event
                 </button>
@@ -128,18 +142,18 @@ export const EventManagementPage: React.FC = () => {
 
           {/* Live Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-violet-100 bg-gradient-to-br from-violet-50 to-violet-100 p-4">
+            <div className="rounded-xl border border-stone-200 bg-gradient-to-br from-stone-50 to-stone-100 p-4">
               <p className="text-sm font-semibold text-slate-600">Total Scans</p>
-              <p className="text-3xl font-bold text-violet-700">
+              <p className="text-3xl font-bold text-neutral-900">
                 {attendances?.summary?.totalScanned}
               </p>
             </div>
 
-            <div className="rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-blue-100 p-4">
+            <div className="rounded-xl border border-stone-200 bg-gradient-to-br from-stone-50 to-stone-100 p-4">
               <p className="text-sm font-semibold text-slate-600">
                 Attendance Rate
               </p>
-              <p className="text-3xl font-bold text-blue-600">{currentRate}%</p>
+              <p className="text-3xl font-bold text-neutral-900">{currentRate}%</p>
             </div>
 
             <div className="rounded-xl border border-amber-100 bg-gradient-to-br from-yellow-50 to-yellow-100 p-4">
@@ -149,11 +163,11 @@ export const EventManagementPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="rounded-xl border border-rose-100 bg-gradient-to-br from-red-50 to-red-100 p-4">
+            <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-100 to-slate-200 p-4">
               <p className="text-sm font-semibold text-slate-600">
                 Suspicious Activity
               </p>
-              <p className="text-3xl font-bold text-red-600">
+              <p className="text-3xl font-bold text-slate-700">
                 {attendances?.summary?.suspiciousActivity?.length || 0}
               </p>
             </div>
@@ -179,7 +193,7 @@ export const EventManagementPage: React.FC = () => {
           )}
 
         {/* Attendance Table */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="surface-card p-6">
           <h2 className="mb-4 text-xl font-bold text-slate-800">
             Attendee List
           </h2>
@@ -241,7 +255,7 @@ export const EventManagementPage: React.FC = () => {
                 onClick={() =>
                   apiClient.exportCSV(token!, eventId!).catch(console.error)
                 }
-                className="rounded-xl bg-emerald-600 px-6 py-2.5 font-semibold text-white transition hover:bg-emerald-700"
+                className="btn-success px-6"
               >
                 📊 Export CSV
               </button>

@@ -42,24 +42,27 @@ export const StudentDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+      <div className="app-shell flex items-center justify-center">
+        <div className="surface-card w-full max-w-md p-8 text-center">
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-stone-300 border-t-black" />
+          <p className="text-sm text-slate-600">Loading your dashboard...</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-bold text-violet-700">Attendify</h1>
+    <div className="app-shell">
+      <nav className="app-nav">
+        <div className="app-container !py-4 flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-slate-900">Attendify</h1>
           <div className="flex items-center gap-4">
             <span className="hidden rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600 sm:inline-flex">
               {user?.email}
             </span>
             <button
               onClick={handleLogout}
-              className="text-sm font-semibold text-rose-600 hover:text-rose-700"
+              className="text-sm font-semibold text-slate-600 hover:text-slate-800"
             >
               Logout
             </button>
@@ -67,44 +70,44 @@ export const StudentDashboard: React.FC = () => {
         </div>
       </nav>
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 rounded-2xl border border-violet-100 bg-gradient-to-r from-violet-600 to-indigo-600 p-6 text-white shadow-lg">
-          <p className="text-sm text-violet-100">Student Dashboard</p>
+      <div className="app-container">
+        <div className="mb-6 rounded-2xl border border-stone-700 bg-gradient-to-r from-black to-stone-800 p-6 text-stone-100 shadow-lg">
+          <p className="text-sm text-stone-300">Student Dashboard</p>
           <h2 className="mt-1 text-2xl font-bold">Welcome back, {user?.name}</h2>
-          <p className="mt-1 text-sm text-violet-100">
+          <p className="mt-1 text-sm text-stone-300">
             Track your participation and check in to ongoing events.
           </p>
         </div>
 
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-violet-100 bg-white p-6 shadow-sm">
+          <div className="metric-card border-stone-200">
             <p className="text-sm text-slate-500">Events Attended</p>
-            <p className="text-3xl font-bold text-violet-700">
+            <p className="text-3xl font-bold text-neutral-900">
               {myAttendances?.stats?.totalAttended || 0}
             </p>
           </div>
-          <div className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm">
+          <div className="metric-card border-stone-200">
             <p className="text-sm text-slate-500">Engagement Score</p>
-            <p className="text-3xl font-bold text-blue-600">
+            <p className="text-3xl font-bold text-neutral-900">
               {Math.min(100, (myAttendances?.stats?.totalAttended || 0) * 20)}
             </p>
           </div>
-          <div className="rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
+          <div className="metric-card border-stone-200">
             <p className="text-sm text-slate-500">Badges Earned</p>
-            <p className="text-3xl font-bold text-emerald-600">
+            <p className="text-3xl font-bold text-neutral-900">
               {myAttendances?.stats?.badges?.length || 0}
             </p>
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="surface-card overflow-hidden">
           <div className="border-b border-slate-200 p-4">
             <div className="flex gap-4">
               <button
                 onClick={() => setActiveTab('events')}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                   activeTab === 'events'
-                    ? 'bg-violet-100 text-violet-700'
+                    ? 'bg-neutral-900 text-stone-100'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -114,7 +117,7 @@ export const StudentDashboard: React.FC = () => {
                 onClick={() => setActiveTab('history')}
                 className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
                   activeTab === 'history'
-                    ? 'bg-violet-100 text-violet-700'
+                    ? 'bg-neutral-900 text-stone-100'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
@@ -127,15 +130,18 @@ export const StudentDashboard: React.FC = () => {
             {activeTab === 'events' && (
               <div className="space-y-4">
                 {events.length === 0 ? (
-                  <p className="text-slate-500">No upcoming events</p>
+                  <div className="empty-panel">
+                    <p className="font-semibold text-slate-600">No upcoming events</p>
+                    <p className="mt-1 text-xs">Check back soon for new college activities.</p>
+                  </div>
                 ) : (
                   events.map((event) => (
                     <div
                       key={event.id}
-                      className="cursor-pointer rounded-xl border border-slate-200 p-4 transition hover:-translate-y-0.5 hover:border-violet-200 hover:shadow-md"
+                      className="cursor-pointer rounded-xl border border-slate-200 p-4 transition hover:-translate-y-0.5 hover:border-stone-400 hover:shadow-md"
                       onClick={() => navigate(`/events/${event.id}`)}
                     >
-                      <div className="flex justify-between items-start">
+                      <div className="flex items-start justify-between gap-4">
                         <div>
                           <h3 className="font-semibold text-slate-800">
                             {event.title}
@@ -148,12 +154,12 @@ export const StudentDashboard: React.FC = () => {
                           </p>
                         </div>
                         <span
-                          className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          className={`status-pill ${
                             event.status === 'ongoing'
-                              ? 'bg-green-100 text-green-700'
+                              ? 'bg-neutral-900 text-stone-100'
                               : event.status === 'completed'
-                                ? 'bg-gray-100 text-gray-700'
-                                : 'bg-yellow-100 text-yellow-700'
+                                ? 'bg-stone-200 text-stone-700'
+                                : 'bg-stone-300 text-stone-800'
                           }`}
                         >
                           {event.status}
@@ -176,7 +182,7 @@ export const StudentDashboard: React.FC = () => {
                       {myAttendances.stats.badges.map((badge: any) => (
                         <div
                           key={badge.name}
-                          className="rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-100 p-4 text-center"
+                          className="rounded-xl border border-stone-200 bg-gradient-to-br from-stone-50 to-stone-100 p-4 text-center"
                         >
                           <p className="text-3xl mb-1">{badge.icon}</p>
                           <p className="text-sm font-semibold text-slate-800">
@@ -196,9 +202,10 @@ export const StudentDashboard: React.FC = () => {
                     Attendance History
                   </h4>
                   {myAttendances?.attendances?.length === 0 ? (
-                    <p className="text-sm text-slate-500">
-                      No attendance records yet
-                    </p>
+                    <div className="empty-panel">
+                      <p className="font-semibold text-slate-600">No attendance records yet</p>
+                      <p className="mt-1 text-xs">Attend your first event to start building your profile.</p>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {myAttendances?.attendances?.map((att: any) => (
@@ -214,7 +221,7 @@ export const StudentDashboard: React.FC = () => {
                               {new Date(att.timestamp).toLocaleString()}
                             </p>
                           </div>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                          <span className="rounded bg-stone-200 px-2 py-1 text-xs text-stone-800">
                             ✓ Attended
                           </span>
                         </div>
