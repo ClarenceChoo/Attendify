@@ -30,7 +30,7 @@ export const OrganiserDashboard: React.FC = () => {
   const loadEvents = async () => {
     try {
       const data = await apiClient.getOrganiserSummary(token!)
-      setEvents(data)
+      setEvents([...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
     } catch (err) {
       console.error('Failed to load events', err)
     } finally {
