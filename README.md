@@ -4,7 +4,9 @@ Attendify is a smart campus engagement platform that makes event attendance fast
 
 It helps organisers run smoother events with live attendance visibility and helps students check in with a frictionless scan flow.
 
-## Project Story (Devpost)
+## Live Demo
+
+https://attendify-bf098.web.app
 
 ### About the project
 
