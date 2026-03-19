@@ -5,11 +5,18 @@ import { apiClient } from '../api'
 
 export const EventManagementPage: React.FC = () => {
   const { eventId } = useParams<{ eventId: string }>()
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const navigate = useNavigate()
   const [event, setEvent] = useState<any>(null)
   const [attendances, setAttendances] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [qrEnabled, setQrEnabled] = useState(false)
+  const [qrImage, setQrImage] = useState<string | null>(null)
+  const [qrIntervalId, setQrIntervalId] = useState<number | null>(null)
+  const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [tokenExpiresAt, setTokenExpiresAt] = useState<number | null>(null)
+  const [progressPercent, setProgressPercent] = useState<number>(100)
+  const [progressIntervalId, setProgressIntervalId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!token || !eventId) return
@@ -38,6 +45,15 @@ export const EventManagementPage: React.FC = () => {
       if (interval) clearInterval(interval)
     }
   }, [token, eventId])
+
+  // Cleanup QR generation interval when component unmounts
+  useEffect(() => {
+    return () => {
+      if (qrIntervalId) {
+        clearInterval(qrIntervalId)
+      }
+    }
+  }, [qrIntervalId])
 
   const handleStartEvent = async () => {
     if (!token || !eventId) return
@@ -259,6 +275,146 @@ export const EventManagementPage: React.FC = () => {
               >
                 📊 Export CSV
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* QR Code Section */}
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-3">Live QR Code</h3>
+          <div className="flex items-center gap-3">
+            {user && event.organiserId === user.id ? (
+              <button
+                onClick={async () => {
+                  if (!token || !eventId) return
+                  if (!qrEnabled) {
+                    setQrEnabled(true)
+                    setQrModalOpen(true)
+
+                    // Generate immediately and then every 20s to match token expiry
+                    const generateOnce = async () => {
+                      try {
+                        const resp = await apiClient.generateToken(token!, eventId!)
+
+                        // Prefer server-provided QR data URL
+                        if (resp.qrDataUrl) {
+                          setQrImage(resp.qrDataUrl)
+                        } else if (resp.scanUrl) {
+                          // Fallback to external QR service
+                          const data = await fetch(`https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${encodeURIComponent(resp.scanUrl)}`)
+                          const blob = await data.blob()
+                          const objectUrl = URL.createObjectURL(blob)
+                          setQrImage(objectUrl)
+                        }
+
+                        // Set expiry and start progress bar
+                        if (resp.expiresAt) {
+                          const exp = Number(resp.expiresAt)
+                          setTokenExpiresAt(exp)
+
+                          // clear existing progress interval
+                          if (progressIntervalId) {
+                            clearInterval(progressIntervalId)
+                            setProgressIntervalId(null)
+                          }
+
+                          // update progress every 200ms
+                          const pid = window.setInterval(() => {
+                            const now = Date.now()
+                            const total = 20000
+                            const remaining = Math.max(0, exp - now)
+                            const pct = Math.max(0, (remaining / total) * 100)
+                            setProgressPercent(pct)
+                          }, 200)
+                          setProgressIntervalId(pid)
+                        }
+                      } catch (err) {
+                        console.error('Failed to generate QR', err)
+                      }
+                    }
+
+                    await generateOnce()
+                    const id = window.setInterval(generateOnce, 20000)
+                    setQrIntervalId(id)
+                  } else {
+                    // Disable and close modal
+                    setQrEnabled(false)
+                    setQrModalOpen(false)
+                    if (qrIntervalId) {
+                      clearInterval(qrIntervalId)
+                      setQrIntervalId(null)
+                    }
+                    if (progressIntervalId) { clearInterval(progressIntervalId); setProgressIntervalId(null) }
+                    setTokenExpiresAt(null)
+                    setProgressPercent(100)
+                    setQrImage(null)
+                  }
+                }}
+                className={`px-4 py-2 rounded ${qrEnabled ? 'bg-red-600 text-white' : 'bg-green-600 text-white'}`}>
+                {qrEnabled ? 'Disable QR' : 'Enable QR'}
+              </button>
+            ) : (
+              <div className="text-sm text-slate-600">Only the event organiser can generate the live QR code.</div>
+            )}
+          </div>
+
+          {/* Modal popup for live QR */}
+          {qrModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/50" onClick={() => {
+                // clicking backdrop closes and disables QR
+                setQrEnabled(false)
+                setQrModalOpen(false)
+                if (qrIntervalId) { clearInterval(qrIntervalId); setQrIntervalId(null) }
+                if (progressIntervalId) { clearInterval(progressIntervalId); setProgressIntervalId(null) }
+                setTokenExpiresAt(null)
+                setProgressPercent(100)
+                setQrImage(null)
+              }} />
+
+              <div className="relative z-10 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+                <div className="flex justify-between items-start">
+                  <h4 className="text-lg font-bold">Live QR — {event.title}</h4>
+                  <button onClick={() => {
+                    setQrEnabled(false)
+                    setQrModalOpen(false)
+                    if (qrIntervalId) { clearInterval(qrIntervalId); setQrIntervalId(null) }
+                    if (progressIntervalId) { clearInterval(progressIntervalId); setProgressIntervalId(null) }
+                    setTokenExpiresAt(null)
+                    setProgressPercent(100)
+                    setQrImage(null)
+                  }} className="text-sm font-semibold text-slate-600">Close</button>
+                </div>
+
+                <div className="mt-4 text-center">
+                  {qrImage ? (
+                    <img src={qrImage} alt="Live QR" className="mx-auto h-64 w-64 rounded-md border bg-white p-2" />
+                  ) : (
+                    <div className="mx-auto flex h-64 w-64 items-center justify-center rounded-md bg-slate-100">
+                      <p className="text-slate-500">Generating QR...</p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 text-sm text-slate-600">
+                    <p>This QR refreshes every 20 seconds. Scan to check in attendees.</p>
+                  </div>
+
+                  {/* 20s progress bar */}
+                  <div className="mt-4">
+                    <div className="mx-auto mb-2 max-w-xs">
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-neutral-900 transition-all"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 text-xs text-slate-600 text-center">
+                        {tokenExpiresAt ? `${Math.max(0, Math.ceil((tokenExpiresAt - Date.now()) / 1000))}s` : '20s'} remaining
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import { StudentDashboard } from './pages/StudentDashboard'
 import { ScanQRPage } from './pages/ScanQRPage'
 import { OrganiserDashboard } from './pages/OrganiserDashboard'
 import { EventManagementPage } from './pages/EventManagementPage'
+import EventLivePage from './pages/EventLivePage'
 import './App.css'
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -19,6 +20,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/event/:eventId/live" element={<EventLivePage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route
         path="/"

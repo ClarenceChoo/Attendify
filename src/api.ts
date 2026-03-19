@@ -146,4 +146,13 @@ export const apiClient = {
 
     return eventSource
   },
+
+  async generateToken(token: string, eventId: string) {
+    const res = await fetch(`${API_URL}/events/${eventId}/generate-token`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
 }

@@ -1,9 +1,10 @@
 import express from 'express'
 import cors from 'cors'
 import jwt from 'jsonwebtoken'
-import crypto from 'crypto'
 import dotenv from 'dotenv'
 import QRCode from 'qrcode'
+import { db } from './firestoreClient.js'
+import crypto from 'crypto'
 
 dotenv.config()
 
@@ -308,65 +309,127 @@ app.patch('/api/events/:eventId/end', verifyToken, (req, res) => {
 // SCAN & ATTENDANCE ENDPOINTS
 // =============================================================================
 
-app.post('/api/scan', verifyToken, (req, res) => {
-  const { token, eventId } = req.body
+app.post('/api/scan', verifyToken, async (req, res) => {
+  try {
+    const signedToken = req.body.token || req.query.token
 
-  const event = events.get(eventId)
-  if (!event) {
-    return res.status(404).json({ error: 'Event not found' })
-  }
+    if (!signedToken) return res.status(400).json({ error: 'No token provided' })
 
-  // Verify rotating token
-  const verification = verifyRotatingToken(token, eventId)
-  if (!verification.valid) {
-    return res.status(400).json({ error: verification.error })
-  }
+    // Parse signed token
+    const [encoded, signature] = signedToken.split('.')
+    if (!encoded || !signature) return res.status(400).json({ error: 'Invalid token format' })
 
-  // Check for duplicate scan in same phase
-  const existingAttendance = Array.from(attendances.values()).find(
-    (a) =>
-      a.eventId === eventId &&
-      a.userId === req.user.id &&
-      a.phase === 'check-in'
-  )
+    const payload = JSON.parse(Buffer.from(encoded, 'base64').toString())
+    const { eventId, tokenId, issuedAt, expiresAt } = payload
 
-  if (existingAttendance) {
-    return res.status(409).json({
-      error: 'Already checked in',
-      timestamp: existingAttendance.timestamp,
-    })
-  }
+    // Verify signature matches
+    const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(JSON.stringify(payload)).digest('hex')
+    if (signature !== expectedSignature) return res.status(400).json({ error: 'Invalid token signature' })
 
-  // Record attendance
-  const attendanceId = `attendance-${Date.now()}`
-  const attendance = {
-    id: attendanceId,
-    eventId,
-    userId: req.user.id,
-    userEmail: req.user.email,
-    phase: 'check-in',
-    timestamp: new Date(),
-    deviceId: req.body.deviceId || null,
-  }
+    // Fetch token doc from Firestore to ensure existence and expiry
+    const tokenDoc = await db.collection('tokens').doc(tokenId).get()
+    if (!tokenDoc.exists) return res.status(404).json({ error: 'Token not found' })
+    const tokenData = tokenDoc.data()
 
-  attendances.set(attendanceId, attendance)
+    const now = Date.now()
+    if (new Date(tokenData.expiresAt).getTime() < now) return res.status(400).json({ error: 'Token expired' })
 
-  // Compute status
-  let status = 'attended'
-  if (event.checkInPhase) {
-    const eventStart = new Date(event.startTime)
-    if (new Date() > new Date(eventStart.getTime() + 15 * 60000)) {
-      status = 'late'
+    const event = events.get(eventId)
+    if (!event) return res.status(404).json({ error: 'Event not found' })
+
+    // Optional: ensure current time within event window (+/- 15min tolerance)
+    const start = event.startTime ? new Date(event.startTime).getTime() : null
+    const end = event.endTime ? new Date(event.endTime).getTime() : null
+    const tolerance = 15 * 60000
+    if (start && now < start - tolerance) return res.status(400).json({ error: 'Too early for check-in' })
+    if (end && now > end + tolerance) return res.status(400).json({ error: 'Event has ended' })
+
+    // Check duplicate attendance
+    const existingAttendance = Array.from(attendances.values()).find(a => a.eventId === eventId && a.userId === req.user.id && a.phase === 'check-in')
+    if (existingAttendance) return res.status(409).json({ error: 'Already checked in', timestamp: existingAttendance.timestamp })
+
+    // Record attendance in-memory and in Firestore
+    const attendanceId = `attendance-${Date.now()}`
+    const attendance = {
+      id: attendanceId,
+      eventId,
+      userId: req.user.id,
+      userEmail: req.user.email,
+      phase: 'check-in',
+      timestamp: new Date(),
+      deviceId: req.body.deviceId || null,
+      tokenId,
     }
-  }
 
-  res.json({
-    success: true,
-    attendance: {
-      ...attendance,
-      status,
-    },
-  })
+    attendances.set(attendanceId, attendance)
+    try {
+      await db.collection('attendances').doc(attendanceId).set({ ...attendance })
+    } catch (dbErr) {
+      console.error('Failed to persist attendance to Firestore', dbErr)
+    }
+
+    // Compute status
+    let status = 'attended'
+    if (event.checkInPhase) {
+      const eventStart = new Date(event.startTime)
+      if (new Date() > new Date(eventStart.getTime() + 15 * 60000)) {
+        status = 'late'
+      }
+    }
+
+    return res.json({ success: true, attendance: { ...attendance, status } })
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ error: 'Scan failed' })
+  }
+})
+
+// Generate signed scan token and store in Firestore
+app.post('/api/events/:eventId/generate-token', verifyToken, async (req, res) => {
+  const { eventId } = req.params
+  const event = events.get(eventId)
+
+  if (!event) return res.status(404).json({ error: 'Event not found' })
+  if (event.organiserId !== req.user.id) return res.status(403).json({ error: 'Not authorised' })
+
+  try {
+    // Create token id
+    const tokenId = crypto.randomBytes(12).toString('hex')
+
+    // Create JWT payload and sign with short expiry (20s)
+    const jwtPayload = { eventId, tokenId }
+    const signedToken = jwt.sign(jwtPayload, JWT_SECRET, { expiresIn: 20 })
+
+    // Decode to get iat/exp
+    const decoded = jwt.decode(signedToken)
+    const issuedAt = decoded && decoded.iat ? decoded.iat * 1000 : Date.now()
+    const expiresAt = decoded && decoded.exp ? decoded.exp * 1000 : Date.now() + 20000
+
+    // Store in Firestore tokens collection
+    await db.collection('tokens').doc(tokenId).set({
+      eventId,
+      tokenId,
+      issuedAt: new Date(issuedAt),
+      expiresAt: new Date(expiresAt),
+      signedToken,
+    })
+
+    // Construct scan URL that will be embedded in the QR
+    const scanUrl = `${APP_URL.replace(/\/$/, '')}/scan?token=${encodeURIComponent(signedToken)}`
+
+    // Generate QR data URL server-side
+    let qrDataUrl = null
+    try {
+      qrDataUrl = await QRCode.toDataURL(scanUrl, { width: 512 })
+    } catch (qrErr) {
+      console.error('Failed to generate QR data URL', qrErr)
+    }
+
+    return res.json({ scanUrl, signedToken, tokenId, issuedAt, expiresAt, qrDataUrl })
+  } catch (err) {
+    console.error(err)
+    res.status(500).json({ error: 'Failed to generate token' })
+  }
 })
 
 // =============================================================================
@@ -566,8 +629,7 @@ app.get('/api/organiser/summary', verifyToken, (req, res) => {
       ...event,
       attendanceCount: eventAttendances.length,
       attendanceRate:
-        Math.round((eventAttendances.length / event.expectedAttendees) * 100) +
-        '%',
+        Math.round((eventAttendances.length / event.expectedAttendees) * 100) + '%',
     }
   })
 
