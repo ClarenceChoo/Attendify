@@ -1,132 +1,119 @@
-# Attendify
+# Attendify: Smart Campus Engagement Platform
 
-Attendify is a smart campus engagement platform that makes event attendance fast, secure, and measurable.
+Attendify is a smart campus engagement platform that makes event attendance fast, secure, and measurable. It helps organisers run smoother events with live attendance visibility and helps students check in with a frictionless scan flow.
 
-It helps organisers run smoother events with live attendance visibility and helps students check in with a frictionless scan flow.
+**Live Demo**: [https://attendify-bf098.web.app](https://attendify-bf098.web.app)
 
-## Live Demo
+## Problem Statement
 
-https://attendify-bf098.web.app
+Residential college event management faces three critical pain points:
 
-### About the project
+- **Slow Attendance Processing**: Manual or manual-adjacent check-in systems waste valuable event time and create bottlenecks
+- **Proxy Sign-ins & Gaming**: Traditional attendance methods (sign sheets, static codes) are easily exploited through proxy attendance
+- **Poor Post-Event Analytics**: Organisers lack real-time visibility and struggle to extract meaningful attendance insights
 
-We built Attendify to solve a common problem in residential colleges: attendance taking is often slow, easy to game through proxy sign-ins, and hard to analyze after the event.
+## The Solution
 
-Our goal was simple: make attendance a one-scan experience for students, while giving organisers secure and trustworthy records in real time.
+Attendify replaces manual attendance with a secure, real-time scan-based system that focuses on **scan once, verify instantly, surface insights immediately**.
 
-Core flow:
-1. Organiser starts check-in for an event.
-2. A live QR rotates frequently.
-3. Student scans and attendance is validated + recorded.
-4. Organiser sees live attendance and post-event export.
+- **Instant Check-in**: Students scan a rotating QR code for one-step attendance verification
+- **Anti-Proxy Protections**: Frequently rotating QR codes, signed scan tokens, and duplicate prevention eliminate proxy abuse
+- **Live Organiser Dashboard**: Real-time attendance updates, suspicious activity flagging, and instant CSV export
+- **Student Engagement**: Attendance history, personal engagement tracking, and achievement badges
 
-### How we built it
+## Core Flow
 
-- Frontend: React + TypeScript + Vite
-- Backend: Express + TypeScript
-- Database: Firestore
-- Auth/Security: JWT + signed scan tokens
-- Real-time: QR stream updates and live dashboard polling
-
-Key implementation highlights:
-- Event lifecycle management (`draft` → `ongoing` → `completed`)
-- Secure scan validation with expiring tokens
-- Duplicate scan rejection and suspicious activity flagging
-- Student attendance history and badge progression
-- CSV export for organiser reporting
-
-Attendance rate is computed as:
-
-$$
-	ext{Attendance Rate} = \frac{\text{Total Scanned}}{\text{Expected Attendees}} \times 100\%
-$$
-
-### Challenges we faced
-
-- Balancing fast UX with secure token validation
-- Handling token expiry and refresh timing cleanly
-- Managing edge cases (expired token, duplicate scans, auth redirects)
-- Keeping the MVP scope tight enough for a hackathon timeline
-
-### What we learned
-
-- A simple user flow requires strong backend design
-- Security and usability must be designed together, not separately
-- Shipping one complete loop is better than many half-built features
-
-### What’s next
-
-- Production hardening for auth and role policies
-- Better anomaly detection for suspicious scans
-- Richer organiser analytics and trend views
-- Notifications and deeper campus integration
-
-## Features
-
-### Student
-- Secure login
-- Event listing and quick scan flow
-- Instant attendance confirmation
-- Attendance history and badges
-
-### Organiser
-- Create and manage events
-- Start/stop check-in windows
-- Live QR generation
-- Real-time attendance dashboard
-- Suspicious activity visibility
-- CSV export after event completion
+1. **Organiser initiates check-in** → Event state changes to "ongoing"
+2. **Live QR code generation** → Backend rotates a signed token every few seconds
+3. **Student scans** → Frontend validates token signature and sends scan request
+4. **Backend verification** → Checks token expiry, duplicate attempts, and user auth status
+5. **Instant confirmation** → Student receives success/error, organiser sees real-time update
+6. **Export & Analysis** → Organiser downloads attendance CSV after event
 
 ## Tech Stack
 
-- React 19
-- TypeScript
-- Vite
-- Express
-- Firebase Firestore
-- JWT
+**Frontend**
+- React 19 + TypeScript + Vite
+- Responsive UI and real-time QR code rotation
+- Tailwind CSS
+
+**Backend**
+- Express + TypeScript
+- JWT token generation and validation
+- Cryptographic signed scan token verification
+
+**Database**
+- Firebase Firestore (NoSQL) for event, attendance, and user data
 
 ## Local Development
 
 ### Prerequisites
-- Node.js 18+
 
-### 1) Install dependencies
+- Node.js 18+
+- A Google Firebase Account
+
+### 1) Set up Firebase
+
+1. Create a new project in the [Firebase Console](https://console.firebase.google.com/).
+2. Enable **Firestore Database** (start in test mode for development).
+3. Register a Web App in your Firebase project settings to get your Firebase configuration keys.
+
+### 2) Environment Variables
+
+Create a single `.env` file at the root of the project bridging both frontend and backend environments:
+
+```env
+# Frontend API and App URLs
+VITE_API_URL=http://localhost:3001/api
+APP_URL=http://localhost:5173
+
+# Firebase Configuration
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_project_id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project_id.firebasestorage.app
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Backend Configuration
+PORT=3001
+JWT_SECRET=your_secure_development_secret
+```
+
+*Note: The backend retrieves Firebase environment variables from the root `.env` as well.*
+
+### 3) Install dependencies
+
+In the root directory, install frontend and backend dependencies:
 
 ```bash
 npm install
 cd server && npm install && cd ..
 ```
 
-### 2) Run backend
+### 4) Run Backend Server
+
+Open a new terminal:
 
 ```bash
 cd server
 npm run dev
 ```
 
-Backend runs on `http://localhost:3001`.
+The backend server runs on `http://localhost:3001`. (Health check: `http://localhost:3001/api/health`)
 
-### 3) Run frontend
+### 5) Run Frontend Application
+
+Open another terminal:
 
 ```bash
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173`.
+The frontend runs on `http://localhost:5173`.
 
-## Environment Variables
+## Deployment
 
-Create `.env` files as needed:
-
-- Root frontend (example):
-  - `VITE_API_URL=http://localhost:3001/api`
-- Server:
-  - `PORT=3001`
-  - `JWT_SECRET=your-secret`
-  - `APP_URL=http://localhost:5173`
-
-## Deployment Notes
-
-- `vercel.json` rewrites all routes to `index.html` for SPA routing.
-- Ensure backend API hosting and frontend `VITE_API_URL` are aligned in production.
+- **Frontend**: Designed to deploy seamlessly on platforms like Vercel or Netlify. When deploying to Vercel, `vercel.json` rewrites all routes to `index.html` for SPA routing. Set all frontend-related environment variables (`VITE_*`) on your hosting platform.
+- **Backend**: Can be deployed to services like Render, Heroku or Railway. Ensure `PORT`, `JWT_SECRET`, and `APP_URL` are aligned.
+- Point the production frontend `VITE_API_URL` to your live deployed backend URL securely.
