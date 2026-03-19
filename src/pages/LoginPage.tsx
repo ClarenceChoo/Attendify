@@ -61,9 +61,6 @@ export const LoginPage: React.FC = () => {
       <div className="mx-auto grid h-full w-full max-w-6xl grid-cols-1 overflow-hidden rounded-3xl border border-white/30 bg-white/10 shadow-2xl backdrop-blur md:grid-cols-2">
         <div className="hidden flex-col justify-between p-10 text-white md:flex">
           <div>
-            <p className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide">
-              HACKATHON READY
-            </p>
             <h1 className="mt-6 text-5xl font-bold leading-tight">
               Attendify
             </h1>

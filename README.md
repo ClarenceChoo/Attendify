@@ -1,73 +1,130 @@
-# React + TypeScript + Vite
+# Attendify
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Attendify is a smart campus engagement platform that makes event attendance fast, secure, and measurable.
 
-Currently, two official plugins are available:
+It helps organisers run smoother events with live attendance visibility and helps students check in with a frictionless scan flow.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Project Story (Devpost)
 
-## React Compiler
+### About the project
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+We built Attendify to solve a common problem in residential colleges: attendance taking is often slow, easy to game through proxy sign-ins, and hard to analyze after the event.
 
-## Expanding the ESLint configuration
+Our goal was simple: make attendance a one-scan experience for students, while giving organisers secure and trustworthy records in real time.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Core flow:
+1. Organiser starts check-in for an event.
+2. A live QR rotates frequently.
+3. Student scans and attendance is validated + recorded.
+4. Organiser sees live attendance and post-event export.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### How we built it
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Frontend: React + TypeScript + Vite
+- Backend: Express + TypeScript
+- Database: Firestore
+- Auth/Security: JWT + signed scan tokens
+- Real-time: QR stream updates and live dashboard polling
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Key implementation highlights:
+- Event lifecycle management (`draft` → `ongoing` → `completed`)
+- Secure scan validation with expiring tokens
+- Duplicate scan rejection and suspicious activity flagging
+- Student attendance history and badge progression
+- CSV export for organiser reporting
+
+Attendance rate is computed as:
+
+$$
+	ext{Attendance Rate} = \frac{\text{Total Scanned}}{\text{Expected Attendees}} \times 100\%
+$$
+
+### Challenges we faced
+
+- Balancing fast UX with secure token validation
+- Handling token expiry and refresh timing cleanly
+- Managing edge cases (expired token, duplicate scans, auth redirects)
+- Keeping the MVP scope tight enough for a hackathon timeline
+
+### What we learned
+
+- A simple user flow requires strong backend design
+- Security and usability must be designed together, not separately
+- Shipping one complete loop is better than many half-built features
+
+### What’s next
+
+- Production hardening for auth and role policies
+- Better anomaly detection for suspicious scans
+- Richer organiser analytics and trend views
+- Notifications and deeper campus integration
+
+## Features
+
+### Student
+- Secure login
+- Event listing and quick scan flow
+- Instant attendance confirmation
+- Attendance history and badges
+
+### Organiser
+- Create and manage events
+- Start/stop check-in windows
+- Live QR generation
+- Real-time attendance dashboard
+- Suspicious activity visibility
+- CSV export after event completion
+
+## Tech Stack
+
+- React 19
+- TypeScript
+- Vite
+- Express
+- Firebase Firestore
+- JWT
+
+## Local Development
+
+### Prerequisites
+- Node.js 18+
+
+### 1) Install dependencies
+
+```bash
+npm install
+cd server && npm install && cd ..
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2) Run backend
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cd server
+npm run dev
 ```
+
+Backend runs on `http://localhost:3001`.
+
+### 3) Run frontend
+
+```bash
+npm run dev
+```
+
+Frontend runs on `http://localhost:5173`.
+
+## Environment Variables
+
+Create `.env` files as needed:
+
+- Root frontend (example):
+  - `VITE_API_URL=http://localhost:3001/api`
+- Server:
+  - `PORT=3001`
+  - `JWT_SECRET=your-secret`
+  - `APP_URL=http://localhost:5173`
+
+## Deployment Notes
+
+- `vercel.json` rewrites all routes to `index.html` for SPA routing.
+- Ensure backend API hosting and frontend `VITE_API_URL` are aligned in production.
