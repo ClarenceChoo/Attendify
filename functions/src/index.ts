@@ -4,6 +4,8 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import Busboy from "busboy";
+import * as XLSX from "xlsx";
 
 const QRCode = require("qrcode");
 
@@ -555,6 +557,199 @@ app.get("/api/organiser/summary", verifyToken, async (req: Request, res: Respons
     );
 
     res.json(summary);
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ─── Namelist upload & attendance status ────────────────────────────────────
+
+const parseExcelBuffer = (buffer: Buffer): { name: string; email: string }[] => {
+  const workbook = XLSX.read(buffer, { type: "buffer" });
+  const sheetName = workbook.SheetNames[0];
+  const rows: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
+
+  const entries: { name: string; email: string }[] = [];
+  for (const row of rows) {
+    // Try common column header variations
+    const email = (row.Email || row.email || row.EMAIL || row["E-mail"] || row["e-mail"] || "").toString().trim().toLowerCase();
+    const name = (row.Name || row.name || row.NAME || row["Full Name"] || row["full name"] || "").toString().trim();
+    if (email) {
+      entries.push({ name: name || email.split("@")[0], email });
+    }
+  }
+  return entries;
+};
+
+const parseMultipartFile = (req: Request): Promise<Buffer> => {
+  return new Promise((resolve, reject) => {
+    const bb = Busboy({ headers: req.headers });
+    const chunks: Buffer[] = [];
+
+    bb.on("file", (_fieldname: string, file: NodeJS.ReadableStream) => {
+      file.on("data", (data: Buffer) => chunks.push(data));
+      file.on("end", () => resolve(Buffer.concat(chunks)));
+    });
+
+    bb.on("error", (err: Error) => reject(err));
+    bb.on("finish", () => {
+      if (chunks.length === 0) reject(new Error("No file uploaded"));
+    });
+
+    // Firebase Cloud Functions may have already consumed the raw body
+    if ((req as any).rawBody) {
+      bb.end((req as any).rawBody);
+    } else {
+      req.pipe(bb);
+    }
+  });
+};
+
+// Upload a namelist Excel file for an event
+app.post("/api/events/:eventId/namelist", verifyToken, async (req: Request, res: Response): Promise<any> => {
+  const eventId = req.params.eventId as string;
+
+  try {
+    const eventSnap = await db.collection("events").doc(eventId).get();
+    if (!eventSnap.exists) return res.status(404).json({ error: "Event not found" });
+
+    const event = eventSnap.data()!;
+    if (event.organiserId !== req.user?.id) return res.status(403).json({ error: "Not authorised" });
+
+    const fileBuffer = await parseMultipartFile(req);
+    const entries = parseExcelBuffer(fileBuffer);
+
+    if (entries.length === 0) {
+      return res.status(400).json({ error: "No valid entries found. Ensure the file has 'Name' and 'Email' columns." });
+    }
+
+    // Store each namelist entry as a sub-document
+    const batch = db.batch();
+
+    // Delete existing namelist entries for this event first
+    const existing = await db.collection("namelists").where("eventId", "==", eventId).get();
+    existing.docs.forEach((doc) => batch.delete(doc.ref));
+
+    for (const entry of entries) {
+      const ref = db.collection("namelists").doc();
+      batch.set(ref, {
+        eventId,
+        name: entry.name,
+        email: entry.email,
+        uploadedAt: new Date().toISOString(),
+      });
+    }
+
+    // Update expected attendees to match namelist size
+    batch.update(db.collection("events").doc(eventId), {
+      expectedAttendees: entries.length,
+    });
+
+    await batch.commit();
+
+    res.json({ success: true, count: entries.length, entries });
+  } catch (e: any) {
+    console.error(e);
+    res.status(500).json({ error: e.message || "Failed to process namelist" });
+  }
+});
+
+// Get the namelist for an event
+app.get("/api/events/:eventId/namelist", verifyToken, async (req: Request, res: Response): Promise<any> => {
+  const eventId = req.params.eventId as string;
+
+  try {
+    const eventSnap = await db.collection("events").doc(eventId).get();
+    if (!eventSnap.exists) return res.status(404).json({ error: "Event not found" });
+
+    const event = eventSnap.data()!;
+    if (event.organiserId !== req.user?.id) return res.status(403).json({ error: "Not authorised" });
+
+    const namelistSnap = await db.collection("namelists").where("eventId", "==", eventId).get();
+    const namelist = namelistSnap.docs.map((d) => d.data());
+
+    res.json({ namelist, count: namelist.length });
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Delete the namelist for an event
+app.delete("/api/events/:eventId/namelist", verifyToken, async (req: Request, res: Response): Promise<any> => {
+  const eventId = req.params.eventId as string;
+
+  try {
+    const eventSnap = await db.collection("events").doc(eventId).get();
+    if (!eventSnap.exists) return res.status(404).json({ error: "Event not found" });
+
+    const event = eventSnap.data()!;
+    if (event.organiserId !== req.user?.id) return res.status(403).json({ error: "Not authorised" });
+
+    const existing = await db.collection("namelists").where("eventId", "==", eventId).get();
+    const batch = db.batch();
+    existing.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// Get attendance status: cross-references namelist with actual attendances
+app.get("/api/events/:eventId/attendance-status", verifyToken, async (req: Request, res: Response): Promise<any> => {
+  const eventId = req.params.eventId as string;
+
+  try {
+    const eventSnap = await db.collection("events").doc(eventId).get();
+    if (!eventSnap.exists) return res.status(404).json({ error: "Event not found" });
+
+    const event = eventSnap.data()!;
+    if (event.organiserId !== req.user?.id) return res.status(403).json({ error: "Not authorised" });
+
+    const [namelistSnap, attSnap] = await Promise.all([
+      db.collection("namelists").where("eventId", "==", eventId).get(),
+      db.collection("attendances").where("eventId", "==", eventId).get(),
+    ]);
+
+    const namelist = namelistSnap.docs.map((d) => d.data());
+    const attendances = attSnap.docs.map((d) => d.data());
+
+    // Build a map of email -> attendance record
+    const attendanceMap: Record<string, any> = {};
+    for (const att of attendances) {
+      if (att.userEmail) {
+        attendanceMap[att.userEmail.toLowerCase()] = att;
+      }
+    }
+
+    // Cross-reference namelist with attendances
+    const statusList = namelist.map((entry) => {
+      const att = attendanceMap[entry.email.toLowerCase()];
+      let status: "present" | "late" | "absent" = "absent";
+      let checkInTime: string | null = null;
+
+      if (att) {
+        status = att.status === "late" ? "late" : "present";
+        checkInTime = att.timestamp || null;
+      }
+
+      return {
+        name: entry.name,
+        email: entry.email,
+        status,
+        checkInTime,
+      };
+    });
+
+    const summary = {
+      total: namelist.length,
+      present: statusList.filter((s) => s.status === "present").length,
+      late: statusList.filter((s) => s.status === "late").length,
+      absent: statusList.filter((s) => s.status === "absent").length,
+    };
+
+    res.json({ statusList, summary });
   } catch {
     res.status(500).json({ error: "Server error" });
   }

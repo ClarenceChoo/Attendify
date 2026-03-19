@@ -133,6 +133,43 @@ export const apiClient = {
     window.URL.revokeObjectURL(url)
   },
 
+  async uploadNamelist(token: string, eventId: string, file: File) {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_URL}/events/${eventId}/namelist`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  async getNamelist(token: string, eventId: string) {
+    const res = await fetch(`${API_URL}/events/${eventId}/namelist`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  async deleteNamelist(token: string, eventId: string) {
+    const res = await fetch(`${API_URL}/events/${eventId}/namelist`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  async getAttendanceStatus(token: string, eventId: string) {
+    const res = await fetch(`${API_URL}/events/${eventId}/attendance-status`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
   subscribeToQR(token: string, eventId: string, onMessage: (data: any) => void) {
     const eventSource = new EventSource(`${API_URL}/events/${eventId}/qr-stream?token=${token}`)
     

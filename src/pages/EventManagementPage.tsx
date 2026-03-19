@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { apiClient } from '../api'
@@ -17,6 +17,14 @@ export const EventManagementPage: React.FC = () => {
   const [tokenExpiresAt, setTokenExpiresAt] = useState<number | null>(null)
   const [progressPercent, setProgressPercent] = useState<number>(100)
   const [progressIntervalId, setProgressIntervalId] = useState<number | null>(null)
+
+  // Namelist state
+  const [namelistCount, setNamelistCount] = useState<number>(0)
+  const [attendanceStatus, setAttendanceStatus] = useState<any>(null)
+  const [uploadingNamelist, setUploadingNamelist] = useState(false)
+  const [namelistError, setNamelistError] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'present' | 'late' | 'absent'>('all')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!token || !eventId) return
@@ -45,6 +53,70 @@ export const EventManagementPage: React.FC = () => {
       if (interval) clearInterval(interval)
     }
   }, [token, eventId])
+
+  // Load namelist and attendance status
+  useEffect(() => {
+    if (!token || !eventId) return
+
+    const loadNamelistData = async () => {
+      try {
+        const [namelistData, statusData] = await Promise.all([
+          apiClient.getNamelist(token, eventId).catch(() => ({ count: 0 })),
+          apiClient.getAttendanceStatus(token, eventId).catch(() => null),
+        ])
+        setNamelistCount(namelistData.count || 0)
+        if (statusData) setAttendanceStatus(statusData)
+      } catch (err) {
+        console.error('Failed to load namelist data', err)
+      }
+    }
+
+    loadNamelistData()
+    const interval = setInterval(loadNamelistData, 5000)
+    return () => clearInterval(interval)
+  }, [token, eventId])
+
+  const handleNamelistUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !token || !eventId) return
+
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv',
+    ]
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      setNamelistError('Please upload an Excel file (.xlsx, .xls) or CSV file')
+      return
+    }
+
+    setUploadingNamelist(true)
+    setNamelistError('')
+
+    try {
+      const result = await apiClient.uploadNamelist(token, eventId, file)
+      setNamelistCount(result.count)
+      // Reload attendance status
+      const statusData = await apiClient.getAttendanceStatus(token, eventId)
+      setAttendanceStatus(statusData)
+    } catch (err: any) {
+      setNamelistError(err.message || 'Failed to upload namelist')
+    } finally {
+      setUploadingNamelist(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleDeleteNamelist = async () => {
+    if (!token || !eventId) return
+    try {
+      await apiClient.deleteNamelist(token, eventId)
+      setNamelistCount(0)
+      setAttendanceStatus(null)
+    } catch (err) {
+      console.error('Failed to delete namelist', err)
+    }
+  }
 
   // Cleanup QR generation interval when component unmounts
   useEffect(() => {
@@ -208,10 +280,141 @@ export const EventManagementPage: React.FC = () => {
             </div>
           )}
 
-        {/* Attendance Table */}
+        {/* Namelist Upload */}
+        <div className="surface-card mb-8 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">Namelist</h2>
+              <p className="text-sm text-slate-500 mt-1">
+                Upload an Excel or CSV file with Name and Email columns to track attendance.
+              </p>
+            </div>
+            {namelistCount > 0 && (
+              <span className="rounded-full bg-stone-100 px-3 py-1 text-sm font-semibold text-stone-700">
+                {namelistCount} registered
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleNamelistUpload}
+              className="hidden"
+              id="namelist-upload"
+            />
+            <label
+              htmlFor="namelist-upload"
+              className={`cursor-pointer rounded-xl border-2 border-dashed px-6 py-3 text-sm font-semibold transition ${
+                uploadingNamelist
+                  ? 'border-stone-300 bg-stone-50 text-stone-400 cursor-wait'
+                  : 'border-stone-300 bg-white text-stone-700 hover:border-stone-500 hover:bg-stone-50'
+              }`}
+            >
+              {uploadingNamelist ? 'Uploading...' : namelistCount > 0 ? 'Replace Namelist' : 'Upload Namelist (.xlsx, .csv)'}
+            </label>
+            {namelistCount > 0 && (
+              <button
+                onClick={handleDeleteNamelist}
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-100 transition"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+
+          {namelistError && (
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {namelistError}
+            </div>
+          )}
+        </div>
+
+        {/* Attendance Status (namelist-based tracking) */}
+        {attendanceStatus && attendanceStatus.statusList?.length > 0 && (
+          <div className="surface-card mb-8 p-6">
+            <h2 className="mb-4 text-xl font-bold text-slate-800">Attendance Tracker</h2>
+
+            {/* Summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={`rounded-xl border p-3 text-left transition ${statusFilter === 'all' ? 'border-stone-400 bg-stone-100' : 'border-stone-200 hover:bg-stone-50'}`}
+              >
+                <p className="text-xs font-semibold text-slate-500">Total</p>
+                <p className="text-2xl font-bold text-slate-900">{attendanceStatus.summary.total}</p>
+              </button>
+              <button
+                onClick={() => setStatusFilter('present')}
+                className={`rounded-xl border p-3 text-left transition ${statusFilter === 'present' ? 'border-green-400 bg-green-50' : 'border-green-100 hover:bg-green-50'}`}
+              >
+                <p className="text-xs font-semibold text-green-600">Present</p>
+                <p className="text-2xl font-bold text-green-700">{attendanceStatus.summary.present}</p>
+              </button>
+              <button
+                onClick={() => setStatusFilter('late')}
+                className={`rounded-xl border p-3 text-left transition ${statusFilter === 'late' ? 'border-yellow-400 bg-yellow-50' : 'border-yellow-100 hover:bg-yellow-50'}`}
+              >
+                <p className="text-xs font-semibold text-yellow-600">Late</p>
+                <p className="text-2xl font-bold text-yellow-700">{attendanceStatus.summary.late}</p>
+              </button>
+              <button
+                onClick={() => setStatusFilter('absent')}
+                className={`rounded-xl border p-3 text-left transition ${statusFilter === 'absent' ? 'border-red-400 bg-red-50' : 'border-red-100 hover:bg-red-50'}`}
+              >
+                <p className="text-xs font-semibold text-red-600">Absent</p>
+                <p className="text-2xl font-bold text-red-700">{attendanceStatus.summary.absent}</p>
+              </button>
+            </div>
+
+            {/* Filtered table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b-2 border-slate-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Name</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Email</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
+                    <th className="px-4 py-3 text-left font-semibold text-slate-700">Check-in Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendanceStatus.statusList
+                    .filter((s: any) => statusFilter === 'all' || s.status === statusFilter)
+                    .map((entry: any, idx: number) => (
+                      <tr key={idx} className="border-b border-slate-100">
+                        <td className="px-4 py-3 font-semibold text-slate-800">{entry.name}</td>
+                        <td className="px-4 py-3 text-slate-600">{entry.email}</td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={`inline-block rounded px-2 py-1 text-xs font-semibold ${
+                              entry.status === 'present'
+                                ? 'bg-green-100 text-green-700'
+                                : entry.status === 'late'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : 'bg-red-100 text-red-700'
+                            }`}
+                          >
+                            {entry.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {entry.checkInTime ? new Date(entry.checkInTime).toLocaleTimeString() : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Scan Log */}
         <div className="surface-card p-6">
           <h2 className="mb-4 text-xl font-bold text-slate-800">
-            Attendee List
+            Scan Log
           </h2>
 
           {attendances?.attendances?.length === 0 ? (
@@ -273,7 +476,7 @@ export const EventManagementPage: React.FC = () => {
                 }
                 className="btn-success px-6"
               >
-                📊 Export CSV
+                Export CSV
               </button>
             </div>
           )}
