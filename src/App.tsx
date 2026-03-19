@@ -40,6 +40,7 @@ const AppRoutes = () => {
           </PrivateRoute>
         }
       />
+      <Route path="/scan" element={<ScanQRPage />} />
       <Route
         path="/events/:eventId"
         element={

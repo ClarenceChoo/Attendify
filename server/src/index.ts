@@ -1,7 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import jwt from 'jsonwebtoken'
-import crypto from 'crypto'
 import dotenv from 'dotenv'
 import QRCode from 'qrcode'
 import path from 'path'
@@ -18,7 +17,9 @@ dotenv.config({ path: path.join(__dirname, '../../.env') })
 const app = express()
 const PORT = process.env.PORT || 3001
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-key'
-const TOKEN_REFRESH_INTERVAL = 30000 // 30 seconds
+const APP_URL = process.env.APP_URL || 'http://localhost:5173'
+const SCAN_TOKEN_EXPIRY_SECONDS = 30
+const TOKEN_REFRESH_INTERVAL = SCAN_TOKEN_EXPIRY_SECONDS * 1000
 
 // Types
 export interface UserPayload {
@@ -163,42 +164,54 @@ const verifyToken = (req: Request, res: Response, next: NextFunction): any => {
 }
 
 // =============================================================================
-// ROTATING TOKEN SERVICE
+// JWT SCAN TOKEN SERVICE
 // =============================================================================
 
-const generateRotatingToken = (eventId: string) => {
-  const timestamp = Math.floor(Date.now() / 1000)
-  const payload = { eventId, timestamp, nonce: crypto.randomBytes(8).toString('hex') }
-  const signature = crypto.createHmac('sha256', JWT_SECRET).update(JSON.stringify(payload)).digest('hex')
-  return `${Buffer.from(JSON.stringify(payload)).toString('base64')}.${signature}`
+const generateScanToken = (eventId: string): string => {
+  return jwt.sign(
+    { eventId, type: 'scan' },
+    JWT_SECRET,
+    { expiresIn: `${SCAN_TOKEN_EXPIRY_SECONDS}s` }
+  )
 }
 
-const verifyRotatingToken = (token: string, eventId: string) => {
+const generateScanUrl = (eventId: string): string => {
+  const token = generateScanToken(eventId)
+  return `${APP_URL}/scan?token=${token}&eventId=${eventId}`
+}
+
+const verifyScanToken = (token: string, eventId: string) => {
   try {
-    const [encoded, signature] = token.split('.')
-    const payload = JSON.parse(Buffer.from(encoded, 'base64').toString())
-
-    const expectedSignature = crypto.createHmac('sha256', JWT_SECRET).update(JSON.stringify(payload)).digest('hex')
-
-    if (signature !== expectedSignature) return { valid: false, error: 'Invalid signature' }
-    if (Math.floor(Date.now() / 1000) - payload.timestamp > 30) return { valid: false, error: 'Token expired' }
+    const payload = jwt.verify(token, JWT_SECRET) as any
+    if (payload.type !== 'scan') return { valid: false, error: 'Invalid token type' }
     if (payload.eventId !== eventId) return { valid: false, error: 'Token event mismatch' }
-    
     return { valid: true, payload }
-  } catch (error) {
-    return { valid: false, error: 'Invalid token format' }
+  } catch (error: any) {
+    if (error.name === 'TokenExpiredError') return { valid: false, error: 'Token expired' }
+    return { valid: false, error: 'Invalid token' }
   }
 }
 
-app.get('/api/events/:eventId/qr-stream', verifyToken, async (req: Request, res: Response): Promise<any> => {
+// SSE stream: EventSource can't set headers, so accept token via query param
+app.get('/api/events/:eventId/qr-stream', async (req: Request, res: Response): Promise<any> => {
   const eventId = req.params.eventId as string;
+  const authToken = req.query.token as string;
+
+  if (!authToken) return res.status(401).json({ error: 'No token provided' })
+
+  try {
+    const decoded = jwt.verify(authToken, JWT_SECRET) as UserPayload
+    req.user = decoded
+  } catch {
+    return res.status(401).json({ error: 'Invalid token' })
+  }
 
   try {
     const eventDoc = await getDoc(doc(db, 'events', eventId));
     if (!eventDoc.exists()) {
       return res.status(404).json({ error: 'Event not found' })
     }
-    
+
     const event = eventDoc.data();
     if (event.organiserId !== req.user?.id) {
       return res.status(403).json({ error: 'Not authorised' })
@@ -209,15 +222,15 @@ app.get('/api/events/:eventId/qr-stream', verifyToken, async (req: Request, res:
     res.setHeader('Connection', 'keep-alive')
 
     const sendQR = async () => {
-      const token = generateRotatingToken(eventId)
+      const scanUrl = generateScanUrl(eventId)
       const qrData = {
-        token,
+        scanUrl,
         refreshAt: Date.now() + TOKEN_REFRESH_INTERVAL,
         expiresAt: Date.now() + TOKEN_REFRESH_INTERVAL + 5000,
       }
 
       try {
-        const qrCode = await QRCode.toDataURL(token)
+        const qrCode = await QRCode.toDataURL(scanUrl)
         res.write(`data: ${JSON.stringify({ ...qrData, qrCode })}\n\n`)
       } catch (err) {
         res.write(`data: ${JSON.stringify(qrData)}\n\n`)
@@ -231,6 +244,31 @@ app.get('/api/events/:eventId/qr-stream', verifyToken, async (req: Request, res:
       clearInterval(interval)
       res.end()
     })
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+})
+
+app.post('/api/events/:eventId/generate-token', verifyToken, async (req: Request, res: Response): Promise<any> => {
+  const eventId = req.params.eventId as string;
+
+  try {
+    const eventDoc = await getDoc(doc(db, 'events', eventId));
+    if (!eventDoc.exists()) return res.status(404).json({ error: 'Event not found' })
+
+    const event = eventDoc.data();
+    if (event.organiserId !== req.user?.id) return res.status(403).json({ error: 'Not authorised' })
+
+    const scanUrl = generateScanUrl(eventId)
+    const expiresAt = Date.now() + TOKEN_REFRESH_INTERVAL
+
+    try {
+      const qrDataUrl = await QRCode.toDataURL(scanUrl, { width: 512 })
+      return res.json({ scanUrl, expiresAt, qrDataUrl })
+    } catch {
+      return res.json({ scanUrl, expiresAt })
+    }
   } catch(e) {
     console.error(e);
     res.status(500).json({ error: 'Server error' });
@@ -371,7 +409,7 @@ app.post('/api/scan', verifyToken, async (req: Request, res: Response): Promise<
     if (!eventDoc.exists()) return res.status(404).json({ error: 'Event not found' })
     const event = eventDoc.data();
 
-    const verification = verifyRotatingToken(token, eventId)
+    const verification = verifyScanToken(token, eventId)
     if (!verification.valid) return res.status(400).json({ error: verification.error })
 
     const attSnap = await getDocs(query(
