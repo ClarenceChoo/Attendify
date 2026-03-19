@@ -38,6 +38,16 @@ export const LoginPage: React.FC = () => {
     try {
       const { token, user } = await apiClient.login(email, password)
       login(token, user)
+
+      // Check for pending QR scan from before login
+      const pendingScan = localStorage.getItem('pendingScan')
+      if (pendingScan) {
+        const { signedToken, eventId } = JSON.parse(pendingScan)
+        localStorage.removeItem('pendingScan')
+        navigate(`/scan?token=${encodeURIComponent(signedToken)}&eventId=${encodeURIComponent(eventId)}`)
+        return
+      }
+
       navigate(user.role === 'organiser' ? '/organiser' : '/events')
     } catch (err: any) {
       setError(err.message || 'Login failed')
