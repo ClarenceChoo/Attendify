@@ -1,4 +1,4 @@
-# Attendify: Smart Campus Engagement Platform
+# Attendify: Smart Campus Management Platform
 
 Attendify is a smart campus engagement platform that makes event attendance fast, secure, and measurable. It helps organisers run smoother events with live attendance visibility and helps students check in with a frictionless scan flow.
 
